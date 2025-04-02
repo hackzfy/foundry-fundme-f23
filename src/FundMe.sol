@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {PriceConverter} from "./PriceConverter.sol";
-using PriceConverter for int256;
+using PriceConverter for uint;
 
 error NotOwner();
 error InsufficientFunds();
@@ -10,26 +10,26 @@ error withdrawFailed();
 error moreFundsRequired();
 
 contract FundMe {
-    int256 public constant minimumUSD = 1e17; // 0.1 eth
+    uint public constant minimumUSD = 1e17; // 0.1 eth
     address payable public immutable owner;
-    int256 total;
+    uint total;
     address[] people;
-    mapping(address => int256) personToAmount;
+    mapping(address => uint) personToAmount;
 
     constructor() {
         owner = payable(msg.sender);
     }
 
-    function fund(int256 amount) public payable {
-        if (amount.getConversionRate() < minimumUSD) {
+    function fund() public payable {
+        if (msg.value.getConversionRate() < minimumUSD) {
             revert moreFundsRequired();
         }
-        total += amount;
+        total += msg.value;
         if (personToAmount[msg.sender] == 0) {
-            personToAmount[msg.sender] = amount;
+            personToAmount[msg.sender] = msg.value;
             people.push(msg.sender);
         } else {
-            personToAmount[msg.sender] += amount;
+            personToAmount[msg.sender] += msg.value;
         }
     }
 
