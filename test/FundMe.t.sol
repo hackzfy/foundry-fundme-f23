@@ -1,21 +1,43 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.28;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {FundMe} from "../src/FundMe.sol";
+import {DeployFundMe} from "../script/FundMe.s.sol";
 
 contract FundMeTest is Test {
     FundMe fundMe;
+    address immutable bob = makeAddr("bob");
+    uint constant INITIAL_BALANCE = 10 ether;
+    uint constant VALUE_SENT = 1 ether;
 
     function setUp() external {
-        fundMe = new FundMe();
+        DeployFundMe deploy = new DeployFundMe();
+        fundMe = deploy.run();
+        vm.deal(bob, INITIAL_BALANCE);
     }
 
     function testMinimusUSD() public view {
-        assertEq(fundMe.minimumUSD(), 1e17);
+        assertEq(fundMe.MINIMUM_USD(), 5);
     }
 
     function testOwnerIsMsgSender() public view {
-        assertEq(fundMe.owner(), address(this));
+        assertEq(fundMe.owner(), msg.sender);
+    }
+
+    function testGetVersion() public view {
+        assertEq(fundMe.getVersion(), 4);
+    }
+
+    function testFundFailWithoutEnoughETH() public {
+        vm.expectRevert();
+        fundMe.fund();
+    }
+
+    function testFundSuccess() public {
+        vm.prank(bob);
+        fundMe.fund{value: VALUE_SENT}();
+        uint amount = fundMe.getAmountByFunder(bob);
+        assertEq(amount, VALUE_SENT);
     }
 }
