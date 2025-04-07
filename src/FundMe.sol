@@ -41,8 +41,26 @@ contract FundMe {
         return s_priceFeed.version();
     }
 
+    function withdrawCheap() public onlyOwner {
+        uint fundersLength = s_funders.length;
+        for (uint i = 0; i < fundersLength; i++) {
+            address funder = s_funders[i];
+            s_funderToAmount[funder] = 0;
+        }
+        s_funders = new address[](0);
+        (bool success, ) = i_owner.call{value: address(this).balance}("");
+        if (!success) {
+            revert withdrawFailed();
+        }
+    }
+
     function withdraw() public onlyOwner {
-        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        for (uint i = 0; i < s_funders.length; i++) {
+            address funder = s_funders[i];
+            s_funderToAmount[funder] = 0;
+        }
+        s_funders = new address[](0);
+        (bool success, ) = i_owner.call{value: address(this).balance}("");
         if (!success) {
             revert withdrawFailed();
         }
